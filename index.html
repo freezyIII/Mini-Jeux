@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Menu Sélection Jeux</title>
+
+<!-- Firebase SDK - compat versions -->
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+<script>
+  // Configuration Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyAAnMkteHD5fw9gKCr6TBDo4F8_GidMzGk",
+    authDomain: "mini-jeux-6fb26.firebaseapp.com",
+    databaseURL: "https://mini-jeux-6fb26-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "mini-jeux-6fb26",
+    storageBucket: "mini-jeux-6fb26.firebasestorage.app",
+    messagingSenderId: "489341641810",
+    appId: "1:489341641810:web:87fdfd6d8a7d26effceb8b",
+    measurementId: "G-PG8THTJHMB"
+  };
+
+  // Initialiser Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  // Fonction pour créer une partie multijoueur dans la base
+  function createServer(server) {
+    const serversRef = db.ref('servers');
+    const newServerRef = serversRef.push();
+    newServerRef.set(server);
+  }
+
+  // Écouter les changements de la liste des serveurs
+  function listenServers(callback) {
+    const serversRef = db.ref('servers');
+    serversRef.on('value', (snapshot) => {
+      const data = snapshot.val();
+      callback(data || {});
+    });
+  }
+  function listenServers() {
+  const serversRef = db.ref('morpion'); // écouter la même branche où tu stockes
+  serversRef.on('value', snapshot => {
+    const data = snapshot.val() || {};
+    servers = Object.values(data);
+    renderServers();
+  });
+}
+function openGameInterface(game) {
+  // ... ton code existant
+  if (selectedMode === 'multi') {
+    listenServers();
+  }
+}
+modeRadios.forEach(radio => {
+  radio.addEventListener('change', () => {
+    selectedMode = document.querySelector('input[name="mode"]:checked').value;
+    if (selectedMode === 'multi') {
+      publicPrivate.style.display = 'flex';
+      listenServers();  // commencer à écouter la liste quand mode multi choisi
+    } else {
+      publicPrivate.style.display = 'none';
+      selectedPubPriv = null;
+      serverList.innerHTML = ''; // vider la liste si solo
+    }
+  });
+});
+
+</script>
+
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; overflow: hidden; background-color: #222; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #eee; }
+#app { position: relative; height: 100vh; }
+#menu { position: absolute; inset: 0; background-color: #2d2c2ca8; z-index: 0; display: flex; flex-direction: column; align-items: center; padding: 40px 20px; overflow-y: auto; }
+#menu h1 { font-weight: 600; margin-bottom: 30px; font-size: 2.8rem; letter-spacing: 1.5px; }
+.games-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 25px; width: 100%; max-width: 1000px; }
+.game-card { background: #333; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.7); cursor: pointer; padding: 20px; text-align: center; transition: transform 0.3s ease, box-shadow 0.3s ease; user-select: none; }
+.game-card:hover { transform: translateY(-10px); box-shadow: 0 8px 24px rgba(0,0,0,0.9); }
+.game-card img { width: 100px; height: 100px; object-fit: contain; margin-bottom: 15px; }
+.game-card h2 { font-size: 1.4rem; font-weight: 600; margin-bottom: 10px; }
+.game-card p { font-size: 1rem; color: #bbb; }
+#game-interface { position: absolute; inset: 0; background-color: #2d2c2ca8; z-index: 5; display: none; flex-direction: column; align-items: center; justify-content: flex-start; padding: 30px 20px; overflow-y: auto; }
+#game-interface.active { display: flex; }
+#game-interface h1 { font-size: 3rem; margin-bottom: 20px; }
+.mode-select { margin: 15px 0 30px; }
+.mode-select label { margin-right: 20px; font-size: 1.2rem; cursor: pointer; }
+#public-private { display: none; margin-bottom: 30px; }
+#public-private button { padding: 12px 28px; border: none; border-radius: 10px; margin-right: 20px; font-size: 1.2rem; cursor: pointer; user-select: none; transition: background-color 0.3s ease; color: white; }
+#public-private button.public { background-color: #28a745; }
+#public-private button.public:hover { background-color: #1e7e34; }
+#public-private button.private { background-color: #dc3545; }
+#public-private button.private:hover { background-color: #a71d2a; }
+button { background-color: #444; border: none; padding: 14px 28px; border-radius: 10px; color: #eee; font-size: 1.2rem; cursor: pointer; transition: background-color 0.3s ease; user-select: none; }
+button:hover { background-color: #666; }
+button#back-button { margin-top: 40px; font-size: 1rem; background-color: transparent; color: #bbb; }
+button#back-button:hover { color: #eee; }
+#server-list { margin-top: 30px; width: 100%; max-width: 800px; display: flex; flex-wrap: wrap; gap: 16px; }
+.server-card { background-color: #444; border-radius: 12px; padding: 16px 24px; flex: 1 1 250px; box-shadow: 0 4px 8px rgba(0,0,0,0.7); color: #eee; user-select: none; display: flex; justify-content: space-between; align-items: center; font-size: 1rem; }
+.server-info { display: flex; flex-direction: column; }
+.server-name { font-weight: 700; font-size: 1.2rem; }
+.server-type { font-size: 0.9rem; margin-top: 4px; padding: 2px 8px; border-radius: 6px; width: fit-content; color: white; }
+.server-type.public { background-color: #28a745; }
+.server-type.private { background-color: #dc3545; }
+.server-players { font-weight: 600; font-size: 1.1rem; min-width: 70px; text-align: right; }
+#overlay { position: absolute; inset: 0; background-color: rgba(0,0,0,0.85); display: flex; justify-content: center; align-items: center; z-index: 10; will-change: transform, opacity; }
+#logo { width: 200px; opacity: 0; transform: scale(0.75); will-change: transform, opacity; }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div id="menu" aria-label="Menu des jeux">
+    <h1>Sélectionne un jeu</h1>
+    <div class="games-grid">
+      <div class="game-card" tabindex="0" role="button" aria-pressed="false" data-game="morpion">
+        <img src="https://cdn-icons-png.flaticon.com/512/1828/1828778.png" alt="Icône Morpion" />
+        <h2>Morpion</h2>
+        <p>Le classique jeu de morpion</p>
+      </div>
+      <div class="game-card" tabindex="0" role="button" aria-pressed="false" data-game="arcade">
+        <img src="https://cdn-icons-png.flaticon.com/512/893/893292.png" alt="Icône Jeu d’Arcade" />
+        <h2>Jeu d’Arcade</h2>
+        <p>Rapidité et réflexes au rendez-vous</p>
+      </div>
+      <div class="game-card" tabindex="0" role="button" aria-pressed="false" data-game="cartes">
+        <img src="https://cdn-icons-png.flaticon.com/512/4144/4144403.png" alt="Icône Jeu de Cartes" />
+        <h2>Jeu de Cartes</h2>
+        <p>Stratégie et bluff à maîtriser</p>
+      </div>
+      <div class="game-card" tabindex="0" role="button" aria-pressed="false" data-game="plateforme">
+        <img src="https://cdn-icons-png.flaticon.com/512/1701/1701314.png" alt="Icône Jeu de Plateforme" />
+        <h2>Jeu de Plateforme</h2>
+        <p>Précision et agilité nécessaires</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-interface" role="main" aria-live="polite">
+    <h1 id="game-title">Titre du jeu</h1>
+    <div class="mode-select">
+      <label><input type="radio" name="mode" value="solo" checked /> Solo</label>
+      <label><input type="radio" name="mode" value="multi" /> Multijoueur</label>
+    </div>
+
+    <div id="public-private">
+      <button class="public">Public</button>
+      <button class="private">Privé</button>
+    </div>
+
+    <button id="host-button">Héberger une partie</button>
+    <button id="back-button">Retour au menu</button>
+
+    <div id="server-list" aria-label="Liste des serveurs multijoueurs"></div>
+  </div>
+
+  <div id="overlay">
+    <img id="logo" src="https://i.imgur.com/jmJUgcY.png" alt="Logo" />
+  </div>
+</div>
+
+<script>
+  const logo = document.getElementById('logo');
+  const overlay = document.getElementById('overlay');
+  const menu = document.getElementById('menu');
+  const gameInterface = document.getElementById('game-interface');
+  const gameTitle = document.getElementById('game-title');
+  const hostButton = document.getElementById('host-button');
+  const backButton = document.getElementById('back-button');
+  const publicPrivate = document.getElementById('public-private');
+  const serverList = document.getElementById('server-list');
+  const modeRadios = document.querySelectorAll('input[name="mode"]');
+
+  let currentGame = null;
+  let selectedMode = 'solo';
+  let selectedPubPriv = null;
+  let servers = [];
+
+  // Animation logo initiale
+  let start = null;
+  const appearDuration = 500;
+  const pauseDuration = 1000;
+  const descendDuration = 1500;
+
+  function easeOutCubic(t) {
+    return 1 - Math.pow(1 - t, 3);
+  }
+
+  function animate(time) {
+    if (!start) start = time;
+    const elapsed = time - start;
+
+    if (elapsed < appearDuration) {
+      const p = elapsed / appearDuration;
+      const e = easeOutCubic(p);
+      logo.style.opacity = e;
+      logo.style.transform = `scale(${0.75 + 0.25 * e})`;
+      overlay.style.opacity = 1;
+      overlay.style.transform = 'translateY(0)';
+    } else if (elapsed < appearDuration + pauseDuration) {
+      logo.style.opacity = 1;
+      logo.style.transform = 'scale(1)';
+      overlay.style.opacity = 1;
+      overlay.style.transform = 'translateY(0)';
+    } else if (elapsed < appearDuration + pauseDuration + descendDuration) {
+      const p = (elapsed - appearDuration - pauseDuration) / descendDuration;
+      const e = easeOutCubic(p);
+      const translateY = e * window.innerHeight;
+      logo.style.opacity = 1 - e;
+      logo.style.transform = `translateY(${translateY}px) scale(1)`;
+      overlay.style.opacity = 1 - e;
+      overlay.style.transform = `translateY(${translateY}px)`;
+    } else {
+      overlay.style.display = 'none';
+      return;
+    }
+
+    requestAnimationFrame(animate);
+  }
+  requestAnimationFrame(animate);
+
+  // Ouvrir jeu
+  menu.addEventListener('click', (e) => {
+    const card = e.target.closest('.game-card');
+    if (!card) return;
+    currentGame = card.dataset.game;
+    openGameInterface(currentGame);
+  });
+
+  function openGameInterface(game) {
+    const titles = {
+      morpion: "Morpion",
+      arcade: "Jeu d’Arcade",
+      cartes: "Jeu de Cartes",
+      plateforme: "Jeu de Plateforme"
+    };
+    gameTitle.textContent = titles[game] || "Jeu";
+    selectedMode = 'solo';
+    selectedPubPriv = null;
+    publicPrivate.style.display = 'none';
+    modeRadios.forEach(radio => {
+      radio.checked = (radio.value === 'solo');
+    });
+    hostButton.textContent = "Héberger une partie";
+    serverList.innerHTML = '';
+
+    gameInterface.classList.add('active');
+    menu.style.display = 'none';
+  }
+
+  // Mode radio change
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      selectedMode = document.querySelector('input[name="mode"]:checked').value;
+      if (selectedMode === 'multi') {
+        publicPrivate.style.display = 'flex';
+      } else {
+        publicPrivate.style.display = 'none';
+        selectedPubPriv = null;
+      }
+    });
+  });
+
+  // Choix public/privé
+  publicPrivate.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'BUTTON') return;
+    selectedPubPriv = e.target.classList.contains('public') ? 'public' : 'private';
+
+    // Marquer visuellement le bouton sélectionné
+    Array.from(publicPrivate.children).forEach(btn => btn.style.opacity = '0.5');
+    e.target.style.opacity = '1';
+  });
+
+  // Générer un code aléatoire pour la partie multijoueur
+  function generateCode(length = 6) {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    let code = '';
+    for(let i = 0; i < length; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  }
+
+  // Héberger partie
+  hostButton.addEventListener('click', () => {
+  if (selectedMode === 'multi' && !selectedPubPriv) {
+    alert("Choisissez Public ou Privé avant d’héberger.");
+    return;
+  }
+
+  const code = generateCode();
+  const server = {
+    id: code,
+    name: `Morpion ${code}`,
+    type: selectedPubPriv,
+    players: 1,
+    jeu: currentGame,
+    createdAt: Date.now()
+  };
+
+  // Enregistre la partie sur Firebase !
+  db.ref('morpion/' + code).set(server);
+
+  // Redirige vers la page du jeu
+  window.location.href = `morpion.html?code=${code}&type=${selectedPubPriv}&jeu=${currentGame}`;
+});
+
+
+  // Afficher la liste des serveurs
+  function renderServers() {
+    serverList.innerHTML = '';
+    servers.forEach(server => {
+      const div = document.createElement('div');
+      div.className = 'server-card';
+      div.innerHTML = `
+        <div class="server-info">
+          <div class="server-name">${server.name}</div>
+          <div class="server-type ${server.type}">${server.type.toUpperCase()}</div>
+        </div>
+        <div class="server-players">${server.players} joueur${server.players > 1 ? 's' : ''}</div>
+      `;
+      serverList.appendChild(div);
+    });
+  }
+
+  // Retour au menu
+  backButton.addEventListener('click', () => {
+    gameInterface.classList.remove('active');
+    menu.style.display = 'flex';
+    servers = [];  // Reset serveurs si tu veux à chaque retour
+    renderServers();
+  });
+</script>
+
+</body>
+</html>

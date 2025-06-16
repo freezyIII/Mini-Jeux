@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <title>Partie en ligne</title>
+  <style>
+    body { background-color: #222; color: #eee; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; }
+    .code { font-size: 2rem; margin: 20px 0; }
+    .back { margin-top: 30px; }
+    .back a { color: #aaa; text-decoration: none; font-size: 1.2rem; }
+    .back a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+  <h1>Bienvenue dans la partie !</h1>
+  <div id="details" class="code"></div>
+  <div class="back"><a href="index.html">Retour au menu</a></div>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get('code');
+    const type = params.get('type');
+    const jeu = params.get('jeu');
+
+    document.getElementById('details').textContent = `Code : ${code} | Type : ${type.toUpperCase()} | Jeu : ${jeu}`;
+  </script>
+</body>
+</html>
