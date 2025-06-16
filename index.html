@@ -5,12 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Menu Sélection Jeux</title>
 
-<!-- Firebase SDK - compat versions -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
 
 <script>
-  // Configuration Firebase
   const firebaseConfig = {
     apiKey: "AIzaSyAAnMkteHD5fw9gKCr6TBDo4F8_GidMzGk",
     authDomain: "mini-jeux-6fb26.firebaseapp.com",
@@ -22,18 +20,15 @@
     measurementId: "G-PG8THTJHMB"
   };
 
-  // Initialiser Firebase
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
 
-  // Fonction pour créer une partie multijoueur dans la base
   function createServer(server) {
     const serversRef = db.ref('servers');
     const newServerRef = serversRef.push();
     newServerRef.set(server);
   }
 
-  // Écouter les changements de la liste des serveurs
   function listenServers(callback) {
     const serversRef = db.ref('servers');
     serversRef.on('value', (snapshot) => {
@@ -41,34 +36,59 @@
       callback(data || {});
     });
   }
-  function listenServers() {
-  const serversRef = db.ref('morpion'); // écouter la même branche où tu stockes
-  serversRef.on('value', snapshot => {
-    const data = snapshot.val() || {};
-    servers = Object.values(data);
-    renderServers();
-  });
-}
-function openGameInterface(game) {
-  // ... ton code existant
-  if (selectedMode === 'multi') {
-    listenServers();
-  }
-}
-modeRadios.forEach(radio => {
-  radio.addEventListener('change', () => {
-    selectedMode = document.querySelector('input[name="mode"]:checked').value;
-    if (selectedMode === 'multi') {
-      publicPrivate.style.display = 'flex';
-      listenServers();  // commencer à écouter la liste quand mode multi choisi
-    } else {
-      publicPrivate.style.display = 'none';
-      selectedPubPriv = null;
-      serverList.innerHTML = ''; // vider la liste si solo
-    }
-  });
-});
 
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      selectedMode = document.querySelector('input[name="mode"]:checked').value;
+      if (selectedMode === 'multi') {
+        publicPrivate.style.display = 'flex';
+        listenServers();
+      } else {
+        publicPrivate.style.display = 'none';
+        selectedPubPriv = null;
+        serverList.innerHTML = '';
+      }
+    });
+  });
+
+  function openGameInterface(game) {
+    const titles = {
+      morpion: "Morpion",
+      arcade: "Jeu d’Arcade",
+      cartes: "Jeu de Cartes",
+      plateforme: "Jeu de Plateforme"
+    };
+    gameTitle.textContent = titles[game] || "Jeu";
+    selectedMode = 'solo';
+    selectedPubPriv = null;
+    publicPrivate.style.display = 'none';
+    modeRadios.forEach(radio => {
+      radio.checked = (radio.value === 'solo');
+    });
+    hostButton.textContent = "Héberger une partie";
+    serverList.innerHTML = '';
+
+    gameInterface.classList.add('active');
+    menu.style.display = 'none';
+
+    if (selectedMode === 'multi') {
+      listenServers();
+    }
+  }
+
+  modeRadios.forEach(radio => {
+    radio.addEventListener('change', () => {
+      selectedMode = document.querySelector('input[name="mode"]:checked').value;
+      if (selectedMode === 'multi') {
+        publicPrivate.style.display = 'flex';
+        listenServers();
+      } else {
+        publicPrivate.style.display = 'none';
+        selectedPubPriv = null;
+        serverList.innerHTML = '';
+      }
+    });
+  });
 </script>
 
 <style>
@@ -179,7 +199,6 @@ button#back-button:hover { color: #eee; }
   let selectedPubPriv = null;
   let servers = [];
 
-  // Animation logo initiale
   let start = null;
   const appearDuration = 500;
   const pauseDuration = 1000;
@@ -222,7 +241,6 @@ button#back-button:hover { color: #eee; }
   }
   requestAnimationFrame(animate);
 
-  // Ouvrir jeu
   menu.addEventListener('click', (e) => {
     const card = e.target.closest('.game-card');
     if (!card) return;
@@ -246,93 +264,84 @@ button#back-button:hover { color: #eee; }
     });
     hostButton.textContent = "Héberger une partie";
     serverList.innerHTML = '';
-
     gameInterface.classList.add('active');
     menu.style.display = 'none';
   }
 
-  // Mode radio change
   modeRadios.forEach(radio => {
     radio.addEventListener('change', () => {
       selectedMode = document.querySelector('input[name="mode"]:checked').value;
       if (selectedMode === 'multi') {
         publicPrivate.style.display = 'flex';
+        serverList.innerHTML = '';
+        selectedPubPriv = null;
       } else {
         publicPrivate.style.display = 'none';
+        serverList.innerHTML = '';
         selectedPubPriv = null;
       }
     });
   });
 
-  // Choix public/privé
-  publicPrivate.addEventListener('click', (e) => {
-    if (e.target.tagName !== 'BUTTON') return;
-    selectedPubPriv = e.target.classList.contains('public') ? 'public' : 'private';
-
-    // Marquer visuellement le bouton sélectionné
-    Array.from(publicPrivate.children).forEach(btn => btn.style.opacity = '0.5');
-    e.target.style.opacity = '1';
+  publicPrivate.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => {
+      selectedPubPriv = button.classList.contains('public') ? 'public' : 'private';
+      serverList.innerHTML = '';
+    });
   });
 
-  // Générer un code aléatoire pour la partie multijoueur
-  function generateCode(length = 6) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for(let i = 0; i < length; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  }
-
-  // Héberger partie
-  hostButton.addEventListener('click', () => {
+hostButton.addEventListener('click', () => {
+  if (!currentGame) return;
   if (selectedMode === 'multi' && !selectedPubPriv) {
-    alert("Choisissez Public ou Privé avant d’héberger.");
+    alert("Veuillez choisir Public ou Privé.");
     return;
   }
-
-  const code = generateCode();
   const server = {
-    id: code,
-    name: `Morpion ${code}`,
-    type: selectedPubPriv,
+    game: currentGame,
+    mode: selectedMode,
+    type: selectedPubPriv || null,
+    name: `Serveur de ${currentGame}`,
     players: 1,
-    jeu: currentGame,
-    createdAt: Date.now()
+    maxPlayers: 4
   };
-
-  // Enregistre la partie sur Firebase !
-  db.ref('morpion/' + code).set(server);
-
-  // Redirige vers la page du jeu
-  window.location.href = `morpion.html?code=${code}&type=${selectedPubPriv}&jeu=${currentGame}`;
+  createServer(server);
+  console.log("Serveur créé :", server);
+  alert("Partie hébergée !");
+  window.location.href = `${currentGame}.html`; // Exemple : morpion.html
 });
 
 
-  // Afficher la liste des serveurs
-  function renderServers() {
-    serverList.innerHTML = '';
-    servers.forEach(server => {
-      const div = document.createElement('div');
-      div.className = 'server-card';
-      div.innerHTML = `
-        <div class="server-info">
-          <div class="server-name">${server.name}</div>
-          <div class="server-type ${server.type}">${server.type.toUpperCase()}</div>
-        </div>
-        <div class="server-players">${server.players} joueur${server.players > 1 ? 's' : ''}</div>
-      `;
-      serverList.appendChild(div);
-    });
-  }
-
-  // Retour au menu
   backButton.addEventListener('click', () => {
     gameInterface.classList.remove('active');
     menu.style.display = 'flex';
-    servers = [];  // Reset serveurs si tu veux à chaque retour
-    renderServers();
+    serverList.innerHTML = '';
+    selectedMode = 'solo';
+    selectedPubPriv = null;
   });
+
+listenServers((data) => {
+  console.log("Données reçues de Firebase:", data);
+  servers = Object.values(data).filter(s => s.game === currentGame);
+  if (selectedPubPriv) {
+    servers = servers.filter(s => s.type === selectedPubPriv);
+  }
+  console.log("Serveurs filtrés:", servers);
+  serverList.innerHTML = '';
+  servers.forEach(server => {
+    const div = document.createElement('div');
+    const typeClass = server.type === 'public' ? 'public' : 'private';
+    div.classList.add('server-card');
+    div.innerHTML = `
+      <div class="server-info">
+        <div class="server-name">${server.name}</div>
+        <div class="server-type ${typeClass}">${server.type || ''}</div>
+      </div>
+      <div class="server-players">${server.players}/${server.maxPlayers}</div>
+    `;
+    serverList.appendChild(div);
+  });
+});
+
 </script>
 
 </body>
